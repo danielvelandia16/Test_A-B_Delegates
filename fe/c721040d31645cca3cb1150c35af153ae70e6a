@@ -1,0 +1,19 @@
+vercel.json
+  s_d29b273e913f37::t_8e9806973fe9a6 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fec721040d31645cca3cb1150c35af153ae70e6a",
+  "prompts": {},
+  "sessions": {
+    "s_d29b273e913f37": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6557c1b-97e8-4c36-ac9a-f60edc7bb1f9",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Daniel Velandia <danielvelandia16@users.noreply.github.com>"
+    }
+  }
+}
