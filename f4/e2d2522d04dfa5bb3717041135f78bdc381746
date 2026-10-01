@@ -1,0 +1,21 @@
+opcion-d-admin.html
+  s_d29b273e913f37::t_4f464ad54ccc50 868-869,3617-3621
+opcion-d-non-admin.html
+  s_d29b273e913f37::t_f6dd2fc5f9abd4 868-869,3617-3621
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f4e2d2522d04dfa5bb3717041135f78bdc381746",
+  "prompts": {},
+  "sessions": {
+    "s_d29b273e913f37": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a6557c1b-97e8-4c36-ac9a-f60edc7bb1f9",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Daniel Velandia <danielvelandia16@users.noreply.github.com>"
+    }
+  }
+}
