@@ -865,6 +865,8 @@ body.role-admin .setsec{margin-top:0}
 .subtype__box{width:440px;max-width:100%}
 /* D: the Select already sits inside the Specific group, so no second indent */
 .subtype--flush{padding-left:0}
+/* the AI sparkle after "Specific delegation": a plain marker, not a tooltip trigger */
+.kind-ai{display:flex;color:var(--cui-color-text-t3)}
 
 /* Approval's own description, under the subtype field and aligned with it.
    control/caption4 in the frames = 12/16 regular in text.t3. */
@@ -3612,6 +3614,11 @@ table.dt{min-width:760px}
         checked: g.key === 'standard',
         onChange: function (on) { if (on) selectDelegationKind(g.key); }
       });
+      if (g.key === 'advanced') {
+        var ai = el('span', 'kind-ai', { 'aria-hidden': 'true' });
+        ai.appendChild(icon('ai-outline', 16, 16));
+        r.el.querySelector('.cui-choice__row').appendChild(ai);
+      }
       kindRadios[g.key] = r;
       row.appendChild(r.el);
       tree.appendChild(row);
