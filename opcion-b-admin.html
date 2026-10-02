@@ -2703,6 +2703,20 @@ table.dt{min-width:760px}
       { value: 'expense-type', label: 'Expense Type', kind: 'text' },
       { value: 'policy-violation', label: 'Policy Violation', kind: 'bool' },
       { value: 'legal-entity', label: 'Legal Entity', kind: 'entity' }
+    ],
+    /* proposal: Option D lists Contract and Receiving delegations, which have no
+       documented approval chain yet, so these two catalogues are placeholders */
+    contract: [
+      { value: 'placeholder', label: 'Select a field', kind: 'none', placeholder: true },
+      { value: 'total', label: 'Contract Value', kind: 'number', currency: true },
+      { value: 'contract-type', label: 'Contract Type', kind: 'text' },
+      { value: 'legal-entity', label: 'Legal Entity', kind: 'entity' }
+    ],
+    receiving: [
+      { value: 'placeholder', label: 'Select a field', kind: 'none', placeholder: true },
+      { value: 'total', label: 'Order Total', kind: 'number', currency: true },
+      { value: 'supplier', label: 'Supplier', kind: 'text' },
+      { value: 'legal-entity', label: 'Legal Entity', kind: 'entity' }
     ]
   };
 
@@ -3060,8 +3074,10 @@ table.dt{min-width:760px}
    *       block on the screen from the start.
    *   C · Generic / Specific: two parent radios inside Delegation Type, each
    *       with its own nested group, every block on the screen from the start.
-   *   D · Generic / Specific with a subtype: C's two parent radios, with B's
-   *       approval subtype Select under Specific instead of C's list.
+   *   D · Generic / Specific with a subtype: C's two parent radios, with one
+   *       searchable Delegation subtype Select under Specific that merges the
+   *       delegation type and its subtype (Payment Batch Approval, Expense
+   *       Report Approval, Contract Delegation, Receiving Delegation).
    * Everything outside the type block (who, how long, criteria, list, view,
    * edit, delete, history) is shared, so the four are tested at the same
    * fidelity. Every string is the one the Figma sections carry; where a state
@@ -3097,12 +3113,18 @@ table.dt{min-width:760px}
     { key: 'contract-review', label: 'Contract Review' }
   ];
 
-  /* A, B and D refine Approval with a subtype; C lists the specific delegations
-     themselves. The value keys are shared so rows, agents and criteria agree. */
+  /* A and B refine Approval with a subtype; C lists the specific delegations
+     themselves; D merges type and subtype into one list. The value keys are
+     shared so rows, agents and criteria agree. */
   var SUBTYPES = OPT_C ? [
     { value: 'payment-batches', label: 'Payment Batch Approval' },
     { value: 'payment-release', label: 'Payment Batch Release' },
     { value: 'expenses', label: 'Expense Report' }
+  ] : OPT_D ? [
+    { value: 'payment-batches', label: 'Payment Batch Approval' },
+    { value: 'expenses', label: 'Expense Report Approval' },
+    { value: 'contract', label: 'Contract Delegation' },
+    { value: 'receiving', label: 'Receiving Delegation' }
   ] : [
     { value: 'payment-batches', label: 'Payment Batches' },
     { value: 'expenses', label: 'Expenses' }
@@ -3114,17 +3136,21 @@ table.dt{min-width:760px}
     'payment-release': { one: 'payment batch', many: 'payment batch releases',
       verb: 'releasing payment batches', pending: 'payment batch releases' },
     expenses: { one: 'expense report', many: 'expense reports',
-      verb: 'approving expense reports', pending: 'expense report approvals' }
+      verb: 'approving expense reports', pending: 'expense report approvals' },
+    contract: { one: 'contract', many: 'contracts',
+      verb: 'reviewing contracts', pending: 'contract reviews' },
+    receiving: { one: 'receipt', many: 'receipts',
+      verb: 'receiving orders', pending: 'receipts' }
   };
   function nounOf(v) { return NOUNS[v] || NOUNS['payment-batches']; }
   /* the criteria catalogue a subtype draws its fields from */
-  function catOf(v) { return v === 'expenses' ? 'expenses' : 'payment-batches'; }
+  function catOf(v) { return CRIT_CATALOGUE[v] ? v : 'payment-batches'; }
   function subtypeLabelOf(v) {
     for (var i = 0; i < SUBTYPES.length; i += 1) if (SUBTYPES[i].value === v) return SUBTYPES[i].label;
     return '';
   }
-  /* "Approval · Payment Batches" in A, B and D, "Payment Batch Approval" in C */
-  function scopeOf(v) { return OPT_C ? subtypeLabelOf(v) : 'Approval · ' + subtypeLabelOf(v); }
+  /* "Approval · Payment Batches" in A and B; C and D name the delegation itself */
+  function scopeOf(v) { return (OPT_C || OPT_D) ? subtypeLabelOf(v) : 'Approval · ' + subtypeLabelOf(v); }
   var SCOPE_PB = scopeOf('payment-batches');
 
   var PEOPLE = [
@@ -3547,13 +3573,16 @@ table.dt{min-width:760px}
       placeholder: placeholder, grouped: searchable, searchPlaceholder: 'Search',
       onChange: function (v) { selectSubtype(v); }
     });
-    s.box.setAttribute('aria-label', 'Approval subtype');
+    s.box.setAttribute('aria-label', OPT_D ? 'Delegation subtype' : 'Approval subtype');
     return s;
   }
-  /* the help a subtype Select carries in B and D */
-  var SUBTYPE_HELP = IS_ADMIN
-    ? 'A subtype lets you refine this delegation with conditions and delegate it to a person. Available only for some approvals, like payment batches.'
-    : 'A subtype lets you refine this delegation with conditions and delegate it to a person or an AI agent. Available only for some approvals, like payment batches.';
+  /* the help a subtype Select carries in B and D; D's list goes beyond approvals */
+  var SUBTYPE_SCOPE = OPT_D
+    ? 'Available only for some delegation types, like payment batch approvals.'
+    : 'Available only for some approvals, like payment batches.';
+  var SUBTYPE_HELP = (IS_ADMIN
+    ? 'A subtype lets you refine this delegation with conditions and delegate it to a person. '
+    : 'A subtype lets you refine this delegation with conditions and delegate it to a person or an AI agent. ') + SUBTYPE_SCOPE;
 
   function nest(control, help) {
     var branch = el('div', 'subtype' + (OPT_A ? ' tree__nest' : '') + (OPT_D ? ' subtype--flush' : ''));
@@ -3606,7 +3635,9 @@ table.dt{min-width:760px}
     [
       /* D says both parents in the singular; C keeps the frame's "Generic Delegations" */
       { key: 'standard', label: OPT_D ? 'Generic delegation' : 'Generic Delegations' },
-      { key: 'advanced', label: 'Specific delegation: criteria and agents' }
+      /* admins cannot delegate to agents, so their label leaves agents out */
+      { key: 'advanced', label: IS_ADMIN ? 'Specific Delegation Criteria'
+        : 'Specific delegation: Define Delegation Criteria and Delegate To Agents' }
     ].forEach(function (g) {
       var row = el('div', 'tree__row');
       var r = Choice({
@@ -3614,7 +3645,7 @@ table.dt{min-width:760px}
         checked: g.key === 'standard',
         onChange: function (on) { if (on) selectDelegationKind(g.key); }
       });
-      if (g.key === 'advanced') {
+      if (g.key === 'advanced' && !IS_ADMIN) {
         var ai = el('span', 'kind-ai', { 'aria-hidden': 'true' });
         ai.appendChild(icon('ai-outline', 16, 16));
         r.el.querySelector('.cui-choice__row').appendChild(ai);
@@ -3634,7 +3665,7 @@ table.dt{min-width:760px}
         aRow.appendChild(approvalRadio.el);
         aRow.hidden = true;
         kids.appendChild(aRow);
-        subtype = subtypeSelect('Select an approval subtype', false);
+        subtype = subtypeSelect('Select a Delegation subtype', true);
         kids.appendChild(nest(subtype, SUBTYPE_HELP));
       } else {
         SUBTYPES.forEach(function (s) {
@@ -3981,7 +4012,7 @@ table.dt{min-width:760px}
     if (OPT_A || state.kind === 'standard') {
       if (!state.types.length) missing.push('Delegation Type');
     } else if (!state.subtype) {
-      missing.push(OPT_C ? 'a specific delegation' : 'the approval subtype');
+      missing.push(OPT_C ? 'a specific delegation' : OPT_D ? 'the delegation subtype' : 'the approval subtype');
     }
     if (IS_ADMIN && delegator.isEmpty()) missing.push('Delegator');
     if (delegatee.isEmpty()) missing.push('Delegate To');
